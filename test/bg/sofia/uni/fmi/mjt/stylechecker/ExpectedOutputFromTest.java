@@ -1,0 +1,17 @@
+// FIXME Wildcards are not allowed in import statements
+import java.lang.*;
+
+public class ExpectedOutputFromTest {
+    public static void sayHello()
+    // FIXME Opening brackets should be placed on the same line as the declaration
+    {
+        // FIXME Length of line should not exceed 100 characters
+        String hello = "Hey, it's Hannah, Hannah Baker. That's right. Don't adjust your... whatever device you're listening to this on. It's me, live and in stereo.";
+        System.out.println(hello);
+    }
+    public static void main(String[] args) {
+        // FIXME Only one statement per line is allowed
+        // FIXME Length of line should not exceed 100 characters
+        sayHello();sayHello();sayHello();sayHello();sayHello();sayHello();sayHello();sayHello();sayHello();sayHello();sayHello();
+    }
+}
