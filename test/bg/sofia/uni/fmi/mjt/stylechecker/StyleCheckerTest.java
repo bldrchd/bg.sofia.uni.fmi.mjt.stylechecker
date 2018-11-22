@@ -40,8 +40,6 @@ public class StyleCheckerTest {
     @Test
     public void testLoadedProperties() throws IOException {
         ByteArrayInputStream input = new ByteArrayInputStream("statements.per.line.check.active=false".getBytes());
-        // input properties
-
         StyleChecker checker = new StyleChecker(input);
 
         ByteArrayInputStream source = new ByteArrayInputStream("echo(1);echo(2);echo(3);".getBytes()); // source
@@ -49,7 +47,6 @@ public class StyleCheckerTest {
 
         checker.checkStyle(source, output);
         String actual = new String(output.toByteArray());
-
         assertEquals("echo(1);echo(2);echo(3);", actual.trim()); 
 
     }
@@ -60,7 +57,7 @@ public class StyleCheckerTest {
              OutputStream os = new FileOutputStream("test/bg/sofia/uni/fmi/mjt/stylechecker/OutputFromTest.java")) {
                 
             StyleChecker checkerDefault = new StyleChecker(); 
-                checkerDefault.checkStyle(is, os); //gets the IS and the result is written to the OS. 
+                checkerDefault.checkStyle(is, os);  
                 assertTrue(checkIfFilesAreEquals(testFileForCompare, os)); 
         } catch (IOException ioe) {
             ioe.printStackTrace();

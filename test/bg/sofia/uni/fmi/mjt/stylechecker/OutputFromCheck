@@ -1,0 +1,2 @@
+// FIXME Wildcards are not allowed in import statements
+import java.util.*;

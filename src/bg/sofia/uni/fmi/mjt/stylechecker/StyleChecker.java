@@ -1,14 +1,11 @@
 package bg.sofia.uni.fmi.mjt.stylechecker;
 
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
-import java.util.Iterator;
 import java.util.Properties;
 import java.util.logging.*;
 
@@ -44,13 +41,9 @@ public class StyleChecker {
     public StyleChecker() throws IOException {
         try {
             properties = new Properties();
-            FileOutputStream output = new FileOutputStream("properties.cfg");
-            properties.setProperty("wildcard.import.check.active", "true");
-            properties.setProperty("statements.per.line.check.active", "true");
-            properties.setProperty("opening.bracket.check.active", "true");
-            properties.setProperty("length.of.line.check.active", "true"); 
-            properties.setProperty("line.length.limit", "100");
-            properties.store(output, "Initial");
+            FileInputStream input = new FileInputStream("properties.cfg");
+            properties.load(input);
+            System.out.println(properties);
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
@@ -66,16 +59,17 @@ public class StyleChecker {
      * @throws IOException
      */
     public StyleChecker(InputStream inputStream) throws IOException {
-        try {
-            Reader defaultprops = new FileReader("properties.cfg") ;
-            properties = new Properties();//none
-            properties.load(defaultprops); //the default //TODO check if this instance is prevented from overwriting the file
-            properties.load(inputStream); //TODO the rest should be default
-            System.out.println(properties); //new
+        try (Reader defaultprops = new FileReader("properties.cfg")) {
+            properties = new Properties();
+            properties.load(defaultprops); 
+            properties.load(inputStream); 
+            if (properties.getProperty("length.of.line.check.active").equals("false"))
+                properties.setProperty("line.length.limit", null);
+            System.out.println(properties); 
         } catch (IOException ioe) {
             ioe.printStackTrace();
         } finally {
-           inputStream.close();//TODO anything else to close?
+           inputStream.close();
         }
     }
 
@@ -88,36 +82,23 @@ public class StyleChecker {
      * @param output
      * @throws IOException
      */
-    public void checkStyle(InputStream sourceToRead, OutputStream output) throws IOException {
+    public OutputStream checkStyle(InputStream sourceToRead, OutputStream output) throws IOException {
         try (InputStream inputSource = sourceToRead; OutputStream outputDestination = output) {
             Checks checks = new Checks(sourceToRead, output);
             
             if (Boolean.parseBoolean(properties.getProperty("wildcard.import.check.active"))) 
-                checks.wildcardImport(sourceToRead, output);
+                checks.wildcardImport(sourceToRead, output); 
             if (Boolean.parseBoolean(properties.getProperty("statements.per.line.check.active")))
-               checks.statementsPerLine();
+               checks.statementsPerLine(sourceToRead, output);
             if (Boolean.parseBoolean(properties.getProperty("opening.bracket.check.active")))
-                checks.openingBrackets();
+                checks.openingBrackets(sourceToRead, output);
             if (Boolean.parseBoolean(properties.getProperty("length.of.line.check.active")))
-                checks.lenghtOfLine(properties.getProperty("line.length.limit"));
+                checks.lenghtOfLine(sourceToRead, output, properties.getProperty("line.length.limit"));
  
+            return output;
         } catch (IOException ioe) {
             logger.log(Level.SEVERE, "Exception in checkStyle.", ioe);
         }
+        return output;
     }
-    
-/*    public static void main(String[] args) {
-        try {
-//            FileOutputStream os = new FileOutputStream("props.cfg");
-            Properties props = new Properties();
-            props.load(new FileInputStream("props.cfg"));
-//            props.setProperty("test", "val1");
-            System.out.println(props);
-//            props.store(os, "my props");
-//            os.flush();
-//            os.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }*/
 }
