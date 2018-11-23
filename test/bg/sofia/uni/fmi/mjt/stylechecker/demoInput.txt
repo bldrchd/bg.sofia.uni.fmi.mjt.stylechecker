@@ -1,6 +1,6 @@
 import java.lang.*;
 
-public class InputSourceFileForTest {
+public class demoInput {
 
     public static void sayHello()
     {

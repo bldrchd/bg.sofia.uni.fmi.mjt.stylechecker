@@ -7,7 +7,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.util.Properties;
-import java.util.logging.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Used for static code checks of Java files.
@@ -24,7 +25,7 @@ import java.util.logging.*;
  */
 public class StyleChecker {
     private static final Logger logger = Logger.getLogger(StyleChecker.class.getName());
-    private Properties properties = null; 
+    private Properties properties = null;
 
     /**
      * Creates a StyleChecker with properties having the following default
@@ -39,15 +40,15 @@ public class StyleChecker {
      **/
 
     public StyleChecker() throws IOException {
-        try {
-            properties = new Properties();
-            FileInputStream input = new FileInputStream("properties.cfg");
-            properties.load(input);
-            System.out.println(properties);
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
-        
+	try {
+	    properties = new Properties();
+	    FileInputStream input = new FileInputStream("properties.cfg");
+	    properties.load(input);
+	    System.out.println(properties);
+	} catch (IOException ioe) {
+	    logger.log(Level.SEVERE, "Exception in loading properties.", ioe);
+	}
+
     }
 
     /**
@@ -59,46 +60,47 @@ public class StyleChecker {
      * @throws IOException
      */
     public StyleChecker(InputStream inputStream) throws IOException {
-        try (Reader defaultprops = new FileReader("properties.cfg")) {
-            properties = new Properties();
-            properties.load(defaultprops); 
-            properties.load(inputStream); 
-            if (properties.getProperty("length.of.line.check.active").equals("false"))
-                properties.setProperty("line.length.limit", null);
-            System.out.println(properties); 
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        } finally {
-           inputStream.close();
-        }
+	try (Reader defaultprops = new FileReader("properties.cfg")) {
+	    properties = new Properties();
+	    properties.load(defaultprops);
+	    properties.load(inputStream);
+	    if (properties.getProperty("length.of.line.check.active").equals("false"))
+		properties.setProperty("line.length.limit", null);
+	    System.out.println(properties);
+	} catch (IOException ioe) {
+	    logger.log(Level.SEVERE, "Exception in loading properties.", ioe);
+	} finally {
+	    inputStream.close();
+	}
     }
 
     /**
-     * For each line from the given {@code source} InputStream writes 
-     * comment for the violated rules (if any) with an explanation of the style
-     * error followed by the line itself in the {@code output}.
+     * For each line from the given {@code source} InputStream writes comment
+     * for the violated rules (if any) with an explanation of the style error
+     * followed by the line itself in the {@code output}.
      * 
      * @param sourceToRead
      * @param output
      * @throws IOException
      */
-    public OutputStream checkStyle(InputStream sourceToRead, OutputStream output) throws IOException {
-        try (InputStream inputSource = sourceToRead; OutputStream outputDestination = output) {
-            Checks checks = new Checks(sourceToRead, output);
-            
-            if (Boolean.parseBoolean(properties.getProperty("wildcard.import.check.active"))) 
-                checks.wildcardImport(sourceToRead, output); 
-            if (Boolean.parseBoolean(properties.getProperty("statements.per.line.check.active")))
-               checks.statementsPerLine(sourceToRead, output);
-            if (Boolean.parseBoolean(properties.getProperty("opening.bracket.check.active")))
-                checks.openingBrackets(sourceToRead, output);
-            if (Boolean.parseBoolean(properties.getProperty("length.of.line.check.active")))
-                checks.lenghtOfLine(sourceToRead, output, properties.getProperty("line.length.limit"));
- 
-            return output;
-        } catch (IOException ioe) {
-            logger.log(Level.SEVERE, "Exception in checkStyle.", ioe);
-        }
-        return output;
+    public void checkStyle(InputStream sourceToRead, OutputStream output) throws IOException {
+	//try(InputStream inputSource = sourceToRead; OutputStream outputDestination = output) {
+	try (sourceToRead, output) {
+	    Checks checks = new Checks(sourceToRead, output);
+
+	    if (Boolean.parseBoolean(properties.getProperty("wildcard.import.check.active")))
+		checks.wildcardImport();
+	    if (Boolean.parseBoolean(properties.getProperty("statements.per.line.check.active")))
+		checks.statementsPerLine();
+	    if (Boolean.parseBoolean(properties.getProperty("opening.bracket.check.active")))
+		checks.openingBrackets();
+	    if (Boolean.parseBoolean(properties.getProperty("length.of.line.check.active")))
+		checks.lenghtOfLine(properties.getProperty("line.length.limit"));
+
+	    // return output;
+	} catch (IOException ioe) {
+	    logger.log(Level.SEVERE, "Exception in checkStyle.", ioe);
+	}
+	// return output;
     }
 }
