@@ -1,7 +1,7 @@
 // FIXME Wildcards are not allowed in import statements
 import java.lang.*;
 
-public class ExpectedOutput {
+public class demoInput{
     public static void sayHello()
     // FIXME Opening brackets should be placed on the same line as the declaration
     {

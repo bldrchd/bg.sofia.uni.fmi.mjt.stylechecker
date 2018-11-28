@@ -1,14 +1,15 @@
 package bg.sofia.uni.fmi.mjt.stylechecker;
 
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Used for static code checks of Java files.
@@ -24,7 +25,6 @@ import java.util.logging.Logger;
  * </ul>
  */
 public class StyleChecker {
-    private static final Logger logger = Logger.getLogger(StyleChecker.class.getName());
     private Properties properties = null;
 
     /**
@@ -40,14 +40,11 @@ public class StyleChecker {
      **/
 
     public StyleChecker() throws IOException {
-	try {
-	    properties = new Properties();
-	    FileInputStream input = new FileInputStream("properties.cfg");
-	    properties.load(input);
-	    System.out.println(properties);
-	} catch (IOException ioe) {
-	    logger.log(Level.SEVERE, "Exception in loading properties.", ioe);
-	}
+
+	properties = new Properties();
+	FileInputStream input = new FileInputStream("properties.cfg");
+	properties.load(input);
+	System.out.println(properties);
 
     }
 
@@ -66,9 +63,6 @@ public class StyleChecker {
 	    properties.load(inputStream);
 	    if (properties.getProperty("length.of.line.check.active").equals("false"))
 		properties.setProperty("line.length.limit", null);
-	    System.out.println(properties);
-	} catch (IOException ioe) {
-	    logger.log(Level.SEVERE, "Exception in loading properties.", ioe);
 	} finally {
 	    inputStream.close();
 	}
@@ -83,24 +77,62 @@ public class StyleChecker {
      * @param output
      * @throws IOException
      */
-    public void checkStyle(InputStream sourceToRead, OutputStream output) throws IOException {
-	//try(InputStream inputSource = sourceToRead; OutputStream outputDestination = output) {
-	try (sourceToRead, output) {
-	    Checks checks = new Checks(sourceToRead, output);
+    public OutputStream checkStyle(InputStream sourceToRead, OutputStream output) throws IOException {
+	int length = 0;
 
-	    if (Boolean.parseBoolean(properties.getProperty("wildcard.import.check.active")))
+	inputToFile(sourceToRead);
+
+	try {
+	    Checks checks = new Checks();
+	    if (Boolean.parseBoolean(properties.getProperty("wildcard.import.check.active"))) {
 		checks.wildcardImport();
-	    if (Boolean.parseBoolean(properties.getProperty("statements.per.line.check.active")))
+	    }
+	    if (Boolean.parseBoolean(properties.getProperty("statements.per.line.check.active"))) {
 		checks.statementsPerLine();
-	    if (Boolean.parseBoolean(properties.getProperty("opening.bracket.check.active")))
+	    }
+	    if (Boolean.parseBoolean(properties.getProperty("opening.bracket.check.active"))) {
 		checks.openingBrackets();
-	    if (Boolean.parseBoolean(properties.getProperty("length.of.line.check.active")))
-		checks.lenghtOfLine(properties.getProperty("line.length.limit"));
+	    }
+	    if (Boolean.parseBoolean(properties.getProperty("length.of.line.check.active"))) {
+		length = Integer.parseInt(properties.getProperty("line.length.limit"));
+		checks.lenghtOfLine(length);
+	    }
+	    return output = readResult();
 
-	    // return output;
-	} catch (IOException ioe) {
-	    logger.log(Level.SEVERE, "Exception in checkStyle.", ioe);
+	} finally {
+
 	}
-	// return output;
+
+	/*
+	 * try (InputStream ins = new FileInputStream(resultFromCheck)) { //
+	 * OutputStream output = new ByteArrayOutputStream()) { byte[] buffer =
+	 * new byte[4096]; int read = 0; while ((read = ins.read(buffer)) != -1)
+	 * { output.write(buffer, 0, read); } System.out.println("O: [" + output
+	 * + "]"); }
+	 */
+
+    }
+
+    private OutputStream readResult() throws FileNotFoundException, IOException {
+	try (InputStream ins = new FileInputStream("source.txt"); OutputStream output = new ByteArrayOutputStream()) {
+	    byte[] buffer = new byte[4096];
+	    int read = 0;
+	    while ((read = ins.read(buffer)) != -1) {
+		output.write(buffer, 0, read);
+	    }
+	    System.out.println("O: [" + output + "]");
+	    return output;
+	}
+    }
+
+    private void inputToFile(InputStream sourceToRead) throws FileNotFoundException, IOException {
+	try (OutputStream os = new FileOutputStream("source.txt")) {
+
+	    byte[] buffer = new byte[4096];
+	    int count = 0;
+	    while ((count = sourceToRead.read(buffer)) > 0) {
+		os.write(buffer, 0, count);
+	    }
+	}
     }
 }

@@ -19,19 +19,22 @@ import java.util.stream.Stream;
 import org.junit.Test;
 
 public class StyleCheckerTest {
-    private static File expectedOutput = new File("test/bg/sofia/uni/fmi/mjt/stylechecker/ExpectedOutput.txt");
+    private static File expectedOutput = new File("ExpectedOutput.txt");
 
     @Test
-    public void testImport() throws IOException {
+    public void testImport() {
 	try (ByteArrayInputStream input = new ByteArrayInputStream("import java.util.*;".getBytes()); // source
 	        ByteArrayOutputStream output = new ByteArrayOutputStream()) {
 
+	    OutputStream os = new ByteArrayOutputStream();
 	    StyleChecker checker = new StyleChecker();
+	    os = checker.checkStyle(input, output);
+	    String actual = new String(os.toString());
+	    System.out.println("Actual: [" + actual + "]");
 
-	    checker.checkStyle(input, output);
-	    String actual = new String(output.toByteArray());
-
-	    assertEquals("// FIXME Wildcards are not allowed in import statements\nimport java.util.*;", actual.trim());
+	    assertEquals("// FIXME Wildcards are not allowed in import statements\nimport java.util.*;".trim(),
+	            actual.trim());
+	    os.close();
 	} catch (IOException ioe) {
 	    ioe.printStackTrace();
 	}
@@ -43,11 +46,36 @@ public class StyleCheckerTest {
 	        ByteArrayInputStream source = new ByteArrayInputStream("echo(1);echo(2);echo(3);".getBytes());
 	        ByteArrayOutputStream output = new ByteArrayOutputStream()) {
 
+	    OutputStream os = new ByteArrayOutputStream();
 	    StyleChecker checker = new StyleChecker(input);
 
-	    checker.checkStyle(source, output);
-	    String actual = new String(output.toByteArray());
-	    assertEquals("echo(1);echo(2);echo(3);", actual.trim());
+	    os = checker.checkStyle(source, output);
+	    String actual = new String(os.toString());
+	    System.out.println("Actual: " + actual);
+	    assertEquals("echo(1);echo(2);echo(3);".trim(), actual.trim());
+
+	} catch (IOException ioe) {
+	    ioe.printStackTrace();
+	}
+    }
+
+    @Test
+    public void testPropertiesMulti() throws IOException {
+	try (ByteArrayInputStream input = new ByteArrayInputStream("statements.per.line.check.active=true".getBytes());
+	        ByteArrayInputStream source = new ByteArrayInputStream(
+	                "import java.util.*;\necho(1);echo(2);echo(3);".getBytes());
+	        ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+
+	    OutputStream os = new ByteArrayOutputStream();
+	    StyleChecker checker = new StyleChecker(input);
+
+	    os = checker.checkStyle(source, output);
+	    String actual = new String(os.toString());
+	    System.out.println("Actual: [" + actual + "]");
+	    assertEquals(
+	            "// FIXME Wildcards are not allowed in import statements\n import java.util.*;\n// FIXME Only one statement per line is allowed\necho(1);echo(2);echo(3);\n"
+	                    .trim(),
+	            actual.trim());
 
 	} catch (IOException ioe) {
 	    ioe.printStackTrace();
@@ -56,12 +84,11 @@ public class StyleCheckerTest {
 
     @Test
     public void testWithFile() throws IOException {
-	try (InputStream is = new FileInputStream("test/bg/sofia/uni/fmi/mjt/stylechecker/demoInput.txt");
-	        OutputStream os = new ByteArrayOutputStream()) {
+	try (InputStream is = new FileInputStream("demoInput.txt"); OutputStream os = new ByteArrayOutputStream()) {
 
 	    StyleChecker checkerDefault = new StyleChecker();
 	    checkerDefault.checkStyle(is, os);
-	    File result = new File("test/bg/sofia/uni/fmi/mjt/stylechecker/ResultFromCheck");
+	    File result = new File("source.txt");
 	    Path resultPath = Paths.get(result.getAbsolutePath());
 	    assertTrue(checkIfFilesAreEquals(expectedOutput, resultPath));
 	} catch (IOException ioe) {
@@ -80,8 +107,10 @@ public class StyleCheckerTest {
 	    // Maybe there is a better way?
 	    String dataActual = linesFromOutput.collect(Collectors.joining("\n"));
 	    String dataExpected = linesFromExpected.collect(Collectors.joining("\n"));
-
+	    // System.out.println("E : " + dataExpected);
+	    System.out.println("A : " + dataActual);
 	    return dataExpected.equals(dataActual);
+
 	} catch (IOException ioe) {
 	    ioe.printStackTrace();
 	}
