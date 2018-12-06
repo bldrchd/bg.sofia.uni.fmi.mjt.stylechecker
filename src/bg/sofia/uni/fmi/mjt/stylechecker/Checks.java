@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
+@Deprecated
 public class Checks {
 
     File tempInput = new File("source.txt");
